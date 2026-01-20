@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Orbitron', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -57,6 +61,16 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        tamv: {
+          deep: "hsl(var(--tamv-deep))",
+          surface: "hsl(var(--tamv-surface))",
+          elevated: "hsl(var(--tamv-elevated))",
+          cyan: "hsl(var(--tamv-cyan))",
+          magenta: "hsl(var(--tamv-magenta))",
+          purple: "hsl(var(--tamv-purple))",
+          gold: "hsl(var(--tamv-gold))",
+          green: "hsl(var(--tamv-green))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -65,25 +79,48 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        "pulse-glow": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
+        },
+        "gradient-shift": {
+          "0%": { backgroundPosition: "0% 50%" },
+          "100%": { backgroundPosition: "300% 50%" },
+        },
+        shimmer: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        float: "float 6s ease-in-out infinite",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "gradient-shift": "gradient-shift 4s linear infinite",
+        shimmer: "shimmer 2s infinite",
+      },
+      backgroundImage: {
+        "cyber-gradient": "linear-gradient(135deg, hsl(186 100% 50% / 0.1), hsl(330 100% 50% / 0.1))",
+        "neon-gradient": "linear-gradient(90deg, hsl(186 100% 50%), hsl(270 100% 60%), hsl(330 100% 50%))",
+        "glass-gradient": "linear-gradient(135deg, hsl(222 47% 15% / 0.6), hsl(222 47% 8% / 0.8))",
+      },
+      boxShadow: {
+        "glow-cyan": "0 0 30px hsl(186 100% 50% / 0.4)",
+        "glow-magenta": "0 0 30px hsl(330 100% 50% / 0.4)",
+        "glow-purple": "0 0 30px hsl(270 100% 60% / 0.4)",
+        glass: "0 8px 32px hsl(222 47% 4% / 0.4)",
       },
     },
   },
