@@ -10,9 +10,12 @@ import {
   Activity,
   Eye,
   Lock,
-  Server
+  Server,
+  Layers,
+  Users
 } from "lucide-react";
 import { riskEvents } from "@/data/mockData";
+import { tenochtitlanSecurity } from "@/data/tamvEcosystem";
 import { cn } from "@/lib/utils";
 
 const SecurityMetric = ({ label, value, status, icon: Icon }: {
@@ -106,6 +109,34 @@ const RiskEventRow = ({ event, index }: { event: typeof riskEvents[0]; index: nu
   </motion.div>
 );
 
+const SecurityComponent = ({ component, index }: { component: typeof tenochtitlanSecurity.components[0]; index: number }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: index * 0.1 }}
+    className={cn(
+      "p-4 rounded-lg border",
+      component.status === 'active' ? "border-tamv-green/50 bg-tamv-green/5" : "border-muted bg-muted/20"
+    )}
+  >
+    <div className="flex items-center justify-between mb-2">
+      <h4 className="font-display font-semibold text-foreground">{component.name}</h4>
+      <span className={cn(
+        "px-2 py-0.5 rounded-full text-xs font-medium",
+        component.status === 'active' ? "bg-tamv-green/20 text-tamv-green" : "bg-muted text-muted-foreground"
+      )}>
+        {component.status === 'active' ? 'ACTIVO' : 'STANDBY'}
+      </span>
+    </div>
+    <p className="text-sm text-muted-foreground mb-2">{component.role}</p>
+    <div className="flex items-center gap-2">
+      <Layers className="w-4 h-4 text-primary" />
+      <span className="text-sm text-foreground">{component.layers} capas de protección</span>
+    </div>
+    <p className="text-xs text-muted-foreground mt-2">{component.description}</p>
+  </motion.div>
+);
+
 export default function Security() {
   return (
     <AppLayout>
@@ -119,19 +150,37 @@ export default function Security() {
           <div className="w-14 h-14 rounded-xl bg-secondary/20 flex items-center justify-center neon-border-magenta">
             <Shield className="w-7 h-7 text-secondary" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="font-display text-2xl font-bold text-foreground">
               TENOCHTITLAN Security
             </h1>
-            <p className="text-muted-foreground">
-              Advanced threat detection and honeypot deception system
+            <p className="text-muted-foreground text-sm">
+              "{tenochtitlanSecurity.principle}"
             </p>
           </div>
-          <div className="ml-auto flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <div className="px-4 py-2 glass-card rounded-lg flex items-center gap-2">
               <div className="status-online" />
-              <span className="text-sm text-foreground">All Systems Secure</span>
+              <span className="text-sm text-foreground">4 Sistemas Activos</span>
             </div>
+          </div>
+        </motion.div>
+
+        {/* Security Components Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="glass-card p-6"
+        >
+          <h2 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Server className="w-5 h-5 text-primary" />
+            Componentes de Seguridad
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {tenochtitlanSecurity.components.map((component, index) => (
+              <SecurityComponent key={component.name} component={component} index={index} />
+            ))}
           </div>
         </motion.div>
 
@@ -139,25 +188,25 @@ export default function Security() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <SecurityMetric
             icon={Shield}
-            label="Threats Blocked (24h)"
+            label="Amenazas Bloqueadas (24h)"
             value="847"
             status="good"
           />
           <SecurityMetric
             icon={Eye}
-            label="Active Honeypots"
-            value="4"
+            label="Capas Activas"
+            value="47"
             status="good"
           />
           <SecurityMetric
             icon={AlertTriangle}
-            label="Challenges Issued"
+            label="Desafíos Emitidos"
             value="23"
             status="warning"
           />
           <SecurityMetric
             icon={Lock}
-            label="Security Score"
+            label="Puntuación Seguridad"
             value="98.5"
             status="good"
           />
@@ -175,9 +224,9 @@ export default function Security() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-display text-xl font-semibold text-foreground flex items-center gap-2">
                   <Activity className="w-5 h-5 text-primary" />
-                  Recent Security Events
+                  Eventos de Seguridad Recientes
                 </h2>
-                <span className="text-sm text-muted-foreground">Last 24 hours</span>
+                <span className="text-sm text-muted-foreground">Últimas 24 horas</span>
               </div>
 
               <div className="space-y-3">
@@ -190,7 +239,7 @@ export default function Security() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Honeypot Status */}
+            {/* Radars */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -199,23 +248,46 @@ export default function Security() {
             >
               <h3 className="font-display font-semibold text-lg text-foreground flex items-center gap-2 mb-4">
                 <Zap className="w-5 h-5 text-secondary" />
-                Honeypot Network
+                Radares Especializados
               </h3>
 
               <div className="space-y-4">
-                {[
-                  { name: "Auth Decoy", captures: 45, status: "active" },
-                  { name: "API Trap", captures: 23, status: "active" },
-                  { name: "Data Lure", captures: 12, status: "active" },
-                  { name: "Admin Bait", captures: 8, status: "triggered" },
-                ].map((pot) => (
-                  <div key={pot.name} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                    <div className={cn(
-                      "w-2 h-2 rounded-full",
-                      pot.status === 'active' ? "status-online" : "status-warning"
-                    )} />
-                    <span className="flex-1 text-sm text-foreground">{pot.name}</span>
-                    <span className="text-xs text-muted-foreground">{pot.captures} captures</span>
+                {tenochtitlanSecurity.radars.map((radar) => (
+                  <div key={radar.name} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                    <span className="text-2xl">{radar.icon}</span>
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-foreground block">{radar.name}</span>
+                      <span className="text-xs text-muted-foreground">{radar.purpose}</span>
+                    </div>
+                    <div className="status-online" />
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Guardians */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="glass-card p-6"
+            >
+              <h3 className="font-display font-semibold text-lg text-foreground flex items-center gap-2 mb-4">
+                <Users className="w-5 h-5 text-primary" />
+                Guardianía Humana
+              </h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                Ninguna IA tiene autoridad final. Supervisión paralela y redundante.
+              </p>
+
+              <div className="space-y-3">
+                {tenochtitlanSecurity.guardians.map((guardian) => (
+                  <div key={guardian.type} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                    <Shield className="w-4 h-4 text-primary" />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-foreground">Guardián {guardian.type}</span>
+                      <p className="text-xs text-muted-foreground">{guardian.role}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -225,12 +297,12 @@ export default function Security() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.4 }}
               className="glass-card p-6"
             >
               <h3 className="font-display font-semibold text-lg text-foreground flex items-center gap-2 mb-4">
                 <Globe className="w-5 h-5 text-primary" />
-                Threat Origins
+                Origen de Amenazas
               </h3>
 
               <div className="space-y-3">
