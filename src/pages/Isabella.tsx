@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { 
@@ -15,6 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+ import { supabase } from "@/integrations/supabase/client";
+ import { useAuth } from "@/contexts/AuthContext";
 
 interface Message {
   id: string;
@@ -28,18 +30,19 @@ interface Message {
 }
 
 const suggestionChips = [
-  { icon: Wallet, text: "Check my wallet balance" },
-  { icon: TrendingUp, text: "Analyze my MSR score" },
-  { icon: Vote, text: "Show active proposals" },
-  { icon: Shield, text: "Security status report" },
+   { icon: Wallet, text: "¿Cuál es mi balance?" },
+   { icon: TrendingUp, text: "Analiza mi MSR" },
+   { icon: Vote, text: "Propuestas activas" },
+   { icon: Shield, text: "Estado de seguridad" },
 ];
 
 export default function Isabella() {
+   const { session } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
-      content: "Greetings, Citizen. I am Isabella, your AI companion for navigating the TAMV civilization. I can help you with wallet operations, governance participation, reputation analysis, and system insights. How may I assist you today?",
+       content: "Saludos, Ciudadano. Soy Isabella, tu asistente IA del ecosistema TAMV. Puedo ayudarte con wallet, gobernanza, reputación MSR y seguridad. ¿En qué te ayudo?",
       timestamp: new Date(),
     }
   ]);

@@ -14,10 +14,19 @@ import {
   Clock,
   Zap
 } from "lucide-react";
-import { serviceStatus, riskEvents } from "@/data/mockData";
+ import { useServiceHealth, ServiceHealth } from "@/hooks/useServiceHealth";
 import { cn } from "@/lib/utils";
 
-const ServiceCard = ({ service }: { service: typeof serviceStatus[0] }) => (
+ const ServiceCard = ({ service }: { service: ServiceHealth }) => {
+   const statusMap = {
+     operational: 'online',
+     degraded: 'degraded',
+     maintenance: 'degraded',
+     outage: 'offline',
+   } as const;
+   const status = statusMap[service.status] || 'online';
+ 
+   return (
   <motion.div
     whileHover={{ scale: 1.02 }}
     className="glass-card p-4"
@@ -26,27 +35,27 @@ const ServiceCard = ({ service }: { service: typeof serviceStatus[0] }) => (
       <div className="flex items-center gap-3">
         <div className={cn(
           "w-10 h-10 rounded-lg flex items-center justify-center",
-          service.status === 'online' && "bg-tamv-green/20",
-          service.status === 'degraded' && "bg-tamv-gold/20",
-          service.status === 'offline' && "bg-destructive/20"
+           status === 'online' && "bg-tamv-green/20",
+           status === 'degraded' && "bg-tamv-gold/20",
+           status === 'offline' && "bg-destructive/20"
         )}>
           <Server className={cn(
             "w-5 h-5",
-            service.status === 'online' && "text-tamv-green",
-            service.status === 'degraded' && "text-tamv-gold",
-            service.status === 'offline' && "text-destructive"
+             status === 'online' && "text-tamv-green",
+             status === 'degraded' && "text-tamv-gold",
+             status === 'offline' && "text-destructive"
           )} />
         </div>
         <div>
-          <h4 className="font-medium text-foreground">{service.name}</h4>
+           <h4 className="font-medium text-foreground">{service.service_name}</h4>
           <div className="flex items-center gap-2">
             <div className={cn(
               "w-2 h-2 rounded-full",
-              service.status === 'online' && "status-online",
-              service.status === 'degraded' && "status-warning",
-              service.status === 'offline' && "status-danger"
+               status === 'online' && "status-online",
+               status === 'degraded' && "status-warning",
+               status === 'offline' && "status-danger"
             )} />
-            <span className="text-xs text-muted-foreground capitalize">{service.status}</span>
+             <span className="text-xs text-muted-foreground capitalize">{status}</span>
           </div>
         </div>
       </div>
@@ -54,15 +63,16 @@ const ServiceCard = ({ service }: { service: typeof serviceStatus[0] }) => (
     <div className="grid grid-cols-2 gap-4 text-sm">
       <div>
         <span className="text-muted-foreground">Uptime</span>
-        <p className="font-medium text-foreground">{service.uptime}%</p>
+         <p className="font-medium text-foreground">{Number(service.uptime_percentage).toFixed(2)}%</p>
       </div>
       <div>
-        <span className="text-muted-foreground">Latency</span>
-        <p className="font-medium text-foreground">{service.latency}ms</p>
+         <span className="text-muted-foreground">Estado</span>
+         <p className="font-medium text-foreground capitalize">{service.status}</p>
       </div>
     </div>
   </motion.div>
-);
+   );
+ };
 
 const MetricCard = ({ icon: Icon, label, value, change, changeType }: {
   icon: any;
@@ -95,6 +105,8 @@ const MetricCard = ({ icon: Icon, label, value, change, changeType }: {
 );
 
 export default function Hub() {
+   const { data: services = [], isLoading } = useServiceHealth();
+ 
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
@@ -152,14 +164,14 @@ export default function Hub() {
             <div className="flex items-center gap-2 text-sm">
               <CheckCircle className="w-4 h-4 text-tamv-green" />
               <span className="text-muted-foreground">
-                {serviceStatus.filter(s => s.status === 'online').length}/{serviceStatus.length} Online
+                 {services.filter(s => s.status === 'operational').length}/{services.length} Online
               </span>
             </div>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {serviceStatus.map((service, index) => (
+             {services.map((service, index) => (
               <motion.div
-                key={service.name}
+                 key={service.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
@@ -190,37 +202,11 @@ export default function Hub() {
             </div>
 
             <div className="space-y-3">
-              {riskEvents.slice(0, 4).map((event) => (
-                <div key={event.id} className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
-                  <div className={cn(
-                    "w-10 h-10 rounded-lg flex items-center justify-center",
-                    event.decision === 'allow' && "bg-tamv-green/20",
-                    event.decision === 'challenge' && "bg-tamv-gold/20",
-                    event.decision === 'block' && "bg-destructive/20",
-                    event.decision === 'honeypot' && "bg-secondary/20"
-                  )}>
-                    {event.decision === 'allow' && <CheckCircle className="w-5 h-5 text-tamv-green" />}
-                    {event.decision === 'challenge' && <AlertTriangle className="w-5 h-5 text-tamv-gold" />}
-                    {event.decision === 'block' && <Shield className="w-5 h-5 text-destructive" />}
-                    {event.decision === 'honeypot' && <Zap className="w-5 h-5 text-secondary" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">{event.ip}</p>
-                    <p className="text-xs text-muted-foreground truncate">{event.reason}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className={cn(
-                      "text-sm font-medium",
-                      event.score < 30 && "text-tamv-green",
-                      event.score >= 30 && event.score < 70 && "text-tamv-gold",
-                      event.score >= 70 && "text-destructive"
-                    )}>
-                      Risk: {event.score}
-                    </div>
-                    <div className="text-xs text-muted-foreground capitalize">{event.decision}</div>
-                  </div>
-                </div>
-              ))}
+             <div className="text-center py-8">
+               <Shield className="w-12 h-12 mx-auto mb-3 text-tamv-green" />
+               <p className="text-tamv-green font-medium">Sistema Seguro</p>
+               <p className="text-sm text-muted-foreground">TENOCHTITLAN activo</p>
+             </div>
             </div>
           </motion.div>
 

@@ -1,31 +1,30 @@
-import { motion } from "framer-motion";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { 
-  User, 
-  Wallet, 
-  Bell, 
-  TrendingUp, 
-  Users, 
-  Activity,
-  ArrowUpRight,
-  ArrowDownLeft,
-  Star,
-  Zap,
-  Globe,
-  Server,
-  Shield,
-  Target
-} from "lucide-react";
-import { 
-  currentUser, 
-  userMSR, 
-  userWallet, 
-  transactions, 
-  notifications, 
-  daos 
-} from "@/data/mockData";
-import { projectMetrics, projectVision } from "@/data/tamvEcosystem";
-import { cn } from "@/lib/utils";
+ import { motion } from "framer-motion";
+ import { AppLayout } from "@/components/layout/AppLayout";
+ import { 
+   User, 
+   Wallet, 
+   Bell, 
+   TrendingUp, 
+   Users, 
+   Activity,
+   ArrowUpRight,
+   ArrowDownLeft,
+   Star,
+   Zap,
+   Globe,
+   Server,
+   Shield,
+   Target,
+   Loader2
+ } from "lucide-react";
+ import { projectMetrics, projectVision } from "@/data/tamvEcosystem";
+ import { cn } from "@/lib/utils";
+ import { useAuth } from "@/contexts/AuthContext";
+ import { useProfile } from "@/hooks/useProfile";
+ import { useMSR } from "@/hooks/useMSR";
+ import { useWallet, useTransactions } from "@/hooks/useWallet";
+ import { useNotifications } from "@/hooks/useNotifications";
+ import { useMyDAOs } from "@/hooks/useDAOs";
 
 const MSRBar = ({ label, value, color }: { label: string; value: number; color: string }) => (
   <div className="space-y-2">
@@ -75,6 +74,29 @@ const PlatformMetric = ({ icon: Icon, label, value, subtext, trend }: {
 );
 
 export default function Dashboard() {
+   const { user } = useAuth();
+   const { data: profile, isLoading: profileLoading } = useProfile();
+   const { data: msr, isLoading: msrLoading } = useMSR();
+   const { data: wallet, isLoading: walletLoading } = useWallet();
+   const { data: transactions = [], isLoading: txLoading } = useTransactions();
+   const { data: notifications = [], isLoading: notifLoading } = useNotifications();
+   const { data: myDAOs = [], isLoading: daosLoading } = useMyDAOs();
+ 
+   const isLoading = profileLoading || msrLoading || walletLoading;
+ 
+   if (isLoading) {
+     return (
+       <AppLayout>
+         <div className="flex items-center justify-center min-h-[60vh]">
+           <div className="flex flex-col items-center gap-4">
+             <Loader2 className="w-8 h-8 animate-spin text-primary" />
+             <span className="text-muted-foreground">Cargando dashboard...</span>
+           </div>
+         </div>
+       </AppLayout>
+     );
+   }
+ 
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
@@ -86,7 +108,7 @@ export default function Dashboard() {
         >
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground">
-              Bienvenido, {currentUser.name.split(' ')[0]}
+               Bienvenido, {profile?.display_name || user?.email?.split('@')[0] || 'Ciudadano'}
             </h1>
             <p className="text-muted-foreground">
               Tu panel de control civilizacional • {projectVision.name}
@@ -158,12 +180,12 @@ export default function Dashboard() {
               </div>
               <div className="flex-1">
                 <h3 className="font-display font-semibold text-lg text-foreground">
-                  {currentUser.name}
+                   {profile?.display_name || 'Ciudadano TAMV'}
                 </h3>
-                <p className="text-sm text-muted-foreground">{currentUser.email}</p>
+                 <p className="text-sm text-muted-foreground">{user?.email}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-medium capitalize">
-                    {currentUser.role}
+                     Ciudadano
                   </span>
                   <span className="px-2 py-0.5 rounded-full bg-tamv-gold/20 text-tamv-gold text-xs font-medium">
                     ID-NVIDA Verificado
@@ -180,12 +202,12 @@ export default function Dashboard() {
                   Reputación MSR
                 </h4>
                 <span className="text-sm text-muted-foreground">
-                  Promedio: {Math.round((userMSR.wisdom + userMSR.community + userMSR.creation) / 3)}
+                   Promedio: {msr ? Math.round((msr.wisdom + msr.community + msr.creation) / 3) : 0}
                 </span>
               </div>
-              <MSRBar label="Wisdom (Sabiduría)" value={userMSR.wisdom} color="hsl(186, 100%, 50%)" />
-              <MSRBar label="Community (Comunidad)" value={userMSR.community} color="hsl(330, 100%, 50%)" />
-              <MSRBar label="Creation (Creación)" value={userMSR.creation} color="hsl(270, 100%, 60%)" />
+               <MSRBar label="Wisdom (Sabiduría)" value={msr?.wisdom || 0} color="hsl(186, 100%, 50%)" />
+               <MSRBar label="Community (Comunidad)" value={msr?.community || 0} color="hsl(330, 100%, 50%)" />
+               <MSRBar label="Creation (Creación)" value={msr?.creation || 0} color="hsl(270, 100%, 60%)" />
             </div>
           </motion.div>
 
@@ -209,9 +231,9 @@ export default function Dashboard() {
 
             <div className="mb-6">
               <div className="text-4xl font-display font-bold text-gradient-cyber">
-                {userWallet.balance.toLocaleString()}
+                 {wallet?.balance ? Number(wallet.balance).toLocaleString() : '0'}
               </div>
-              <div className="text-muted-foreground">{userWallet.currency} Tokens</div>
+               <div className="text-muted-foreground">{wallet?.currency || 'TAMV'} Tokens</div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -246,12 +268,17 @@ export default function Dashboard() {
                 NOTITAMV
               </h3>
               <span className="px-2 py-0.5 rounded-full bg-secondary/20 text-secondary text-xs font-medium">
-                {notifications.filter(n => !n.read).length} Nuevas
+               {notifications.filter((n: any) => !n.read).length} Nuevas
               </span>
             </div>
 
             <div className="space-y-3">
-              {notifications.slice(0, 4).map((notif) => (
+             {notifications.length === 0 ? (
+               <div className="text-center py-8 text-muted-foreground">
+                 <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                 <p className="text-sm">No hay notificaciones</p>
+               </div>
+             ) : notifications.slice(0, 4).map((notif: any) => (
                 <div
                   key={notif.id}
                   className={cn(
@@ -262,10 +289,13 @@ export default function Dashboard() {
                   <div className="flex items-start gap-3">
                     <div className={cn(
                       "w-2 h-2 rounded-full mt-2 flex-shrink-0",
-                      notif.type === 'success' && "bg-tamv-green",
-                      notif.type === 'warning' && "bg-tamv-gold",
-                      notif.type === 'alert' && "bg-destructive",
-                      notif.type === 'info' && "bg-primary"
+                     notif.notification_type === 'success' && "bg-tamv-green",
+                     notif.notification_type === 'warning' && "bg-tamv-gold",
+                     notif.notification_type === 'error' && "bg-destructive",
+                     notif.notification_type === 'info' && "bg-primary",
+                     notif.notification_type === 'transaction' && "bg-tamv-green",
+                     notif.notification_type === 'dao' && "bg-primary",
+                     notif.notification_type === 'security' && "bg-tamv-gold"
                     )} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">
@@ -302,13 +332,20 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-3">
-              {transactions.slice(0, 5).map((tx) => (
-                <div key={tx.id} className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+             {transactions.length === 0 ? (
+               <div className="text-center py-8 text-muted-foreground">
+                 <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                 <p className="text-sm">No hay transacciones recientes</p>
+               </div>
+             ) : transactions.slice(0, 5).map((tx: any) => {
+               const isIncoming = tx.tx_type === 'deposit' || tx.tx_type === 'reward';
+               return (
+               <div key={tx.id} className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
                   <div className={cn(
                     "w-10 h-10 rounded-lg flex items-center justify-center",
-                    (tx.type === 'receive' || tx.type === 'reward') ? "bg-tamv-green/20" : "bg-secondary/20"
+                   isIncoming ? "bg-tamv-green/20" : "bg-secondary/20"
                   )}>
-                    {(tx.type === 'receive' || tx.type === 'reward') ? (
+                   {isIncoming ? (
                       <ArrowDownLeft className="w-5 h-5 text-tamv-green" />
                     ) : (
                       <ArrowUpRight className="w-5 h-5 text-secondary" />
@@ -316,23 +353,24 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">
-                      {tx.description}
+                     {tx.description || tx.tx_type}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {(tx.type === 'receive' || tx.type === 'reward') ? tx.from : tx.to}
-                    </p>
+                   <p className="text-xs text-muted-foreground capitalize">
+                     {tx.tx_type.replace('_', ' ')}
+                   </p>
                   </div>
                   <div className="text-right">
                     <p className={cn(
                       "font-medium",
-                      (tx.type === 'receive' || tx.type === 'reward') ? "text-tamv-green" : "text-foreground"
+                     isIncoming ? "text-tamv-green" : "text-foreground"
                     )}>
-                      {(tx.type === 'receive' || tx.type === 'reward') ? '+' : '-'}{tx.amount}
+                     {isIncoming ? '+' : '-'}{Number(tx.amount).toLocaleString()}
                     </p>
                     <p className="text-xs text-muted-foreground">TAMV</p>
                   </div>
                 </div>
-              ))}
+               );
+             })}
             </div>
           </motion.div>
 
@@ -354,30 +392,36 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-3">
-              {daos.slice(0, 4).map((dao) => (
-                <div key={dao.id} className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer">
+             {myDAOs.length === 0 ? (
+               <div className="text-center py-8 text-muted-foreground">
+                 <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                 <p className="text-sm">No perteneces a ningún DAO</p>
+                 <a href="/daos" className="text-primary text-sm hover:underline">Explorar DAOs</a>
+               </div>
+             ) : myDAOs.slice(0, 4).map((membership: any) => {
+               const dao = membership.dao;
+               return (
+               <div key={membership.id} className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer">
                   <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center neon-border">
                     <Zap className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">{dao.name}</p>
-                    <p className="text-xs text-muted-foreground">{dao.members} miembros</p>
+                   <p className="text-xs text-muted-foreground">{dao.member_count} miembros</p>
                   </div>
                   <div className="text-right">
                     <div className={cn(
                       "px-2 py-0.5 rounded-full text-xs font-medium",
-                      dao.status === 'active' && "bg-tamv-green/20 text-tamv-green",
-                      dao.status === 'voting' && "bg-tamv-gold/20 text-tamv-gold",
-                      dao.status === 'paused' && "bg-muted text-muted-foreground"
+                     dao.status === 'active' && "bg-tamv-green/20 text-tamv-green",
+                     dao.status === 'inactive' && "bg-muted text-muted-foreground",
+                     dao.status === 'dissolved' && "bg-destructive/20 text-destructive"
                     )}>
-                      {dao.status === 'active' ? 'activo' : dao.status === 'voting' ? 'votando' : 'pausado'}
+                     {dao.status}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {dao.activeProposals} propuestas
-                    </p>
                   </div>
                 </div>
-              ))}
+               );
+             })}
             </div>
           </motion.div>
         </div>
