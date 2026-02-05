@@ -1,24 +1,25 @@
-import { motion } from "framer-motion";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { 
-  Wallet as WalletIcon, 
-  ArrowUpRight, 
-  ArrowDownLeft,
-  TrendingUp,
-  Clock,
-  Filter,
-  Search,
-  Copy,
-  ExternalLink
-} from "lucide-react";
-import { userWallet, transactions } from "@/data/mockData";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+ import { motion } from "framer-motion";
+ import { AppLayout } from "@/components/layout/AppLayout";
+ import { 
+   Wallet as WalletIcon, 
+   ArrowUpRight, 
+   ArrowDownLeft,
+   TrendingUp,
+   Clock,
+   Filter,
+   Search,
+   Copy,
+   ExternalLink,
+   Loader2
+ } from "lucide-react";
+ import { cn } from "@/lib/utils";
+ import { Button } from "@/components/ui/button";
+ import { Input } from "@/components/ui/input";
+ import { toast } from "sonner";
+ import { useWallet, useTransactions, Transaction } from "@/hooks/useWallet";
 
-const TransactionRow = ({ tx }: { tx: typeof transactions[0] }) => {
-  const isIncoming = tx.type === 'receive' || tx.type === 'reward';
+ const TransactionRow = ({ tx }: { tx: Transaction }) => {
+   const isIncoming = tx.tx_type === 'deposit' || tx.tx_type === 'reward';
   
   return (
     <motion.div
@@ -37,11 +38,11 @@ const TransactionRow = ({ tx }: { tx: typeof transactions[0] }) => {
       </div>
       
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-foreground">{tx.description}</p>
+         <p className="font-medium text-foreground">{tx.description || tx.tx_type}</p>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>{isIncoming ? tx.from : tx.to}</span>
-          <span>•</span>
-          <span className="capitalize">{tx.type.replace('_', ' ')}</span>
+           <span className="capitalize">{tx.tx_type.replace('_', ' ')}</span>
+           <span>•</span>
+           <span className="capitalize">{tx.status}</span>
         </div>
       </div>
 
@@ -50,11 +51,11 @@ const TransactionRow = ({ tx }: { tx: typeof transactions[0] }) => {
           "font-display font-bold text-lg",
           isIncoming ? "text-tamv-green" : "text-foreground"
         )}>
-          {isIncoming ? '+' : '-'}{tx.amount.toLocaleString()}
+         {isIncoming ? '+' : '-'}{Number(tx.amount).toLocaleString()}
         </p>
         <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
           <Clock className="w-3 h-3" />
-          {new Date(tx.timestamp).toLocaleDateString()}
+         {new Date(tx.created_at).toLocaleDateString()}
         </p>
       </div>
 
@@ -71,6 +72,8 @@ const TransactionRow = ({ tx }: { tx: typeof transactions[0] }) => {
 };
 
 export default function Wallet() {
+   const { data: wallet, isLoading: walletLoading } = useWallet();
+   const { data: transactions = [], isLoading: txLoading } = useTransactions();
   const walletAddress = "0x7a3b...9f4e";
 
   const handleCopyAddress = () => {
@@ -78,6 +81,19 @@ export default function Wallet() {
     toast.success("Address copied to clipboard");
   };
 
+   if (walletLoading) {
+     return (
+       <AppLayout>
+         <div className="flex items-center justify-center min-h-[60vh]">
+           <div className="flex flex-col items-center gap-4">
+             <Loader2 className="w-8 h-8 animate-spin text-primary" />
+             <span className="text-muted-foreground">Cargando wallet...</span>
+           </div>
+         </div>
+       </AppLayout>
+     );
+   }
+ 
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
@@ -119,10 +135,10 @@ export default function Wallet() {
 
               <div className="mb-6">
                 <div className="text-5xl font-display font-bold text-gradient-cyber">
-                  {userWallet.balance.toLocaleString()}
+                   {wallet?.balance ? Number(wallet.balance).toLocaleString() : '0'}
                 </div>
                 <div className="flex items-center gap-2 mt-2">
-                  <span className="text-xl text-muted-foreground">{userWallet.currency} Tokens</span>
+                   <span className="text-xl text-muted-foreground">{wallet?.currency || 'TAMV'} Tokens</span>
                   <span className="flex items-center gap-1 text-tamv-green text-sm">
                     <TrendingUp className="w-4 h-4" />
                     +12.5% this month
@@ -188,7 +204,12 @@ export default function Wallet() {
           </div>
 
           <div className="space-y-2">
-            {transactions.map((tx, index) => (
+             {transactions.length === 0 ? (
+               <div className="text-center py-12 text-muted-foreground">
+                 <WalletIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                 <p>No hay transacciones aún</p>
+               </div>
+             ) : transactions.map((tx, index) => (
               <motion.div
                 key={tx.id}
                 initial={{ opacity: 0, x: -20 }}

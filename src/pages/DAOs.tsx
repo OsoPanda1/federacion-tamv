@@ -1,22 +1,24 @@
-import { motion } from "framer-motion";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { 
-  Users, 
-  Wallet, 
-  Vote, 
-  Plus,
-  Search,
-  Filter,
-  ArrowRight,
-  Zap,
-  Star
-} from "lucide-react";
-import { daos } from "@/data/mockData";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+ import { motion } from "framer-motion";
+ import { AppLayout } from "@/components/layout/AppLayout";
+ import { 
+   Users, 
+   Wallet, 
+   Vote, 
+   Plus,
+   Search,
+   Filter,
+   ArrowRight,
+   Zap,
+   Star,
+   Loader2
+ } from "lucide-react";
+ import { cn } from "@/lib/utils";
+ import { Button } from "@/components/ui/button";
+ import { Input } from "@/components/ui/input";
+ import { useDAOs, useMyDAOs, useJoinDAO, DAO } from "@/hooks/useDAOs";
+ import { useToast } from "@/hooks/use-toast";
 
-const DAOCard = ({ dao, index }: { dao: typeof daos[0]; index: number }) => (
+ const DAOCard = ({ dao, index, onJoin, isJoining }: { dao: DAO; index: number; onJoin: (id: string) => void; isJoining: boolean }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -33,16 +35,15 @@ const DAOCard = ({ dao, index }: { dao: typeof daos[0]; index: number }) => (
           <h3 className="font-display font-semibold text-lg text-foreground">
             {dao.name}
           </h3>
-          <span className="text-xs text-muted-foreground">{dao.category}</span>
+           <span className="text-xs text-muted-foreground">DAO Activo</span>
         </div>
       </div>
       <div className={cn(
         "px-3 py-1 rounded-full text-xs font-medium",
         dao.status === 'active' && "bg-tamv-green/20 text-tamv-green",
-        dao.status === 'voting' && "bg-tamv-gold/20 text-tamv-gold",
-        dao.status === 'paused' && "bg-muted text-muted-foreground"
+         dao.status === 'inactive' && "bg-tamv-gold/20 text-tamv-gold",
+         dao.status === 'dissolved' && "bg-muted text-muted-foreground"
       )}>
-        {dao.status === 'voting' && <span className="mr-1">●</span>}
         {dao.status}
       </div>
     </div>
@@ -58,7 +59,7 @@ const DAOCard = ({ dao, index }: { dao: typeof daos[0]; index: number }) => (
           Treasury
         </p>
         <p className="font-medium text-foreground">
-          ${(dao.treasury / 1000).toFixed(0)}K
+           ${(Number(dao.treasury_balance) / 1000).toFixed(0)}K
         </p>
       </div>
       <div>
@@ -66,28 +67,65 @@ const DAOCard = ({ dao, index }: { dao: typeof daos[0]; index: number }) => (
           <Users className="w-3 h-3" />
           Members
         </p>
-        <p className="font-medium text-foreground">{dao.members}</p>
+         <p className="font-medium text-foreground">{dao.member_count}</p>
       </div>
       <div>
         <p className="text-sm text-muted-foreground flex items-center gap-1">
           <Vote className="w-3 h-3" />
-          Proposals
+           Estado
         </p>
-        <p className="font-medium text-foreground">{dao.activeProposals}</p>
+         <p className="font-medium text-foreground capitalize">{dao.status}</p>
       </div>
     </div>
 
     <Button 
-      variant="ghost" 
+       variant="ghost"
+       onClick={() => onJoin(dao.id)}
+       disabled={isJoining}
       className="w-full group-hover:bg-primary/10 group-hover:text-primary transition-colors"
     >
-      View DAO
+       {isJoining ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+       Unirse al DAO
       <ArrowRight className="w-4 h-4 ml-2" />
     </Button>
   </motion.div>
 );
 
 export default function DAOs() {
+   const { data: daos = [], isLoading } = useDAOs();
+   const { data: myDAOs = [] } = useMyDAOs();
+   const joinDAO = useJoinDAO();
+   const { toast } = useToast();
+ 
+   const handleJoinDAO = async (daoId: string) => {
+     try {
+       await joinDAO.mutateAsync(daoId);
+       toast({
+         title: "¡Unido al DAO!",
+         description: "Ahora eres miembro de este DAO",
+       });
+     } catch (error: any) {
+       toast({
+         title: "Error",
+         description: error.message || "No se pudo unir al DAO",
+         variant: "destructive",
+       });
+     }
+   };
+ 
+   if (isLoading) {
+     return (
+       <AppLayout>
+         <div className="flex items-center justify-center min-h-[60vh]">
+           <div className="flex flex-col items-center gap-4">
+             <Loader2 className="w-8 h-8 animate-spin text-primary" />
+             <span className="text-muted-foreground">Cargando DAOs...</span>
+           </div>
+         </div>
+       </AppLayout>
+     );
+   }
+ 
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
@@ -122,7 +160,7 @@ export default function DAOs() {
             { label: "Total DAOs", value: "847", icon: Users },
             { label: "Total Treasury", value: "$5.5M", icon: Wallet },
             { label: "Active Proposals", value: "35", icon: Vote },
-            { label: "Your Memberships", value: "5", icon: Star },
+           { label: "Your Memberships", value: String(myDAOs.length), icon: Star },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -169,8 +207,19 @@ export default function DAOs() {
 
         {/* DAO Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {daos.map((dao, index) => (
-            <DAOCard key={dao.id} dao={dao} index={index} />
+         {daos.length === 0 ? (
+           <div className="col-span-full text-center py-12">
+             <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+             <p className="text-muted-foreground">No hay DAOs disponibles</p>
+           </div>
+         ) : daos.map((dao, index) => (
+           <DAOCard 
+             key={dao.id} 
+             dao={dao} 
+             index={index} 
+             onJoin={handleJoinDAO}
+             isJoining={joinDAO.isPending}
+           />
           ))}
         </div>
       </div>
