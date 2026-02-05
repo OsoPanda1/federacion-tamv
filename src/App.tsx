@@ -1,4 +1,6 @@
-import { Suspense, lazy } from "react";
+ import { Suspense, lazy } from "react";
+ import { AuthProvider } from "@/contexts/AuthContext";
+ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,8 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 const Landing = lazy(() => import("./pages/Landing"));
-const Login = lazy(() => import("./pages/Login"));
-const Register = lazy(() => import("./pages/Register"));
+ const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Hub = lazy(() => import("./pages/Hub"));
 const Isabella = lazy(() => import("./pages/Isabella"));
@@ -32,29 +33,46 @@ const LoadingFallback = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Suspense fallback={<LoadingFallback />}>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/info" element={<Info />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/hub" element={<Hub />} />
-            <Route path="/isabella" element={<Isabella />} />
-            <Route path="/wallet" element={<Wallet />} />
-            <Route path="/daos" element={<DAOs />} />
-            <Route path="/governance" element={<Governance />} />
-            <Route path="/security" element={<Security />} />
-            <Route path="/bookpi" element={<BookPI />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </TooltipProvider>
+     <AuthProvider>
+       <TooltipProvider>
+         <Toaster />
+         <Sonner />
+         <BrowserRouter>
+           <Suspense fallback={<LoadingFallback />}>
+             <Routes>
+               <Route path="/" element={<Landing />} />
+               <Route path="/auth" element={<Auth />} />
+               <Route path="/info" element={<Info />} />
+               <Route path="/dashboard" element={
+                 <ProtectedRoute><Dashboard /></ProtectedRoute>
+               } />
+               <Route path="/hub" element={
+                 <ProtectedRoute><Hub /></ProtectedRoute>
+               } />
+               <Route path="/isabella" element={
+                 <ProtectedRoute><Isabella /></ProtectedRoute>
+               } />
+               <Route path="/wallet" element={
+                 <ProtectedRoute><Wallet /></ProtectedRoute>
+               } />
+               <Route path="/daos" element={
+                 <ProtectedRoute><DAOs /></ProtectedRoute>
+               } />
+               <Route path="/governance" element={
+                 <ProtectedRoute><Governance /></ProtectedRoute>
+               } />
+               <Route path="/security" element={
+                 <ProtectedRoute><Security /></ProtectedRoute>
+               } />
+               <Route path="/bookpi" element={
+                 <ProtectedRoute><BookPI /></ProtectedRoute>
+               } />
+               <Route path="*" element={<NotFound />} />
+             </Routes>
+           </Suspense>
+         </BrowserRouter>
+       </TooltipProvider>
+     </AuthProvider>
   </QueryClientProvider>
 );
 
